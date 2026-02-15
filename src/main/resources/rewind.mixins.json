@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "io.github.rewind.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"BlockChangeMixin",
+		"BlockEntityMixin",
+		"PlayerBlockBreakMixin",
+		"ServerWorldMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
