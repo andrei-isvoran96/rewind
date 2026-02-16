@@ -2,6 +2,8 @@
 
 A Fabric mod for Minecraft 1.21.11 that lets you rewind world state up to 30 seconds on demand.
 
+![demo.gif](demo.gif)
+
 ## Features
 
 - **Block Rewind** - Restores destroyed, placed, or modified blocks
