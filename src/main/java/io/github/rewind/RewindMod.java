@@ -3,8 +3,10 @@ package io.github.rewind;
 import io.github.rewind.command.TimelineCommand;
 import io.github.rewind.core.TickRecorder;
 import io.github.rewind.core.TimelineManager;
+import io.github.rewind.network.PreviewPayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -22,6 +24,9 @@ public class RewindMod implements ModInitializer {
     @Override
     public void onInitialize() {
         LOGGER.info("Initializing Rewind mod...");
+
+        // Register preview payload for server -> client
+        PayloadTypeRegistry.playS2C().register(PreviewPayload.ID, PreviewPayload.PACKET_CODEC);
         
         // Register commands
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {

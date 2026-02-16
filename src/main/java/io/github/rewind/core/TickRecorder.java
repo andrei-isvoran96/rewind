@@ -63,7 +63,7 @@ public class TickRecorder {
         if (world.isClient()) return;
         
         TimelineManager manager = TimelineManager.getInstance();
-        if (manager == null || !manager.isRecording() || manager.isRewinding()) {
+        if (manager == null || !manager.isRecording() || manager.isRewinding() || manager.isFrozen()) {
             return;
         }
         
@@ -112,7 +112,7 @@ public class TickRecorder {
         if (world.isClient()) return;
         
         TimelineManager manager = TimelineManager.getInstance();
-        if (manager == null || !manager.isRecording() || manager.isRewinding()) {
+        if (manager == null || !manager.isRecording() || manager.isRewinding() || manager.isFrozen()) {
             return;
         }
         
@@ -141,7 +141,7 @@ public class TickRecorder {
      */
     public static void beginTickEntityTracking(ServerWorld world) {
         TimelineManager manager = TimelineManager.getInstance();
-        if (manager == null || !manager.isRecording() || manager.isRewinding()) {
+        if (manager == null || !manager.isRecording() || manager.isRewinding() || manager.isFrozen()) {
             return;
         }
         
@@ -161,7 +161,7 @@ public class TickRecorder {
      */
     public static void endTickEntityTracking(ServerWorld world) {
         TimelineManager manager = TimelineManager.getInstance();
-        if (manager == null || !manager.isRecording() || manager.isRewinding()) {
+        if (manager == null || !manager.isRecording() || manager.isRewinding() || manager.isFrozen()) {
             return;
         }
         
@@ -217,7 +217,7 @@ public class TickRecorder {
         if (!shouldTrackEntity(entity)) return;
         
         TimelineManager manager = TimelineManager.getInstance();
-        if (manager == null || !manager.isRecording() || manager.isRewinding()) {
+        if (manager == null || !manager.isRecording() || manager.isRewinding() || manager.isFrozen()) {
             return;
         }
         

@@ -19,12 +19,18 @@ The central coordinator for the rewind system. Singleton per server lifecycle.
 - Provides frames for rewind operations
 - Enforces memory limits (default: 50MB)
 
+**State:**
+- `recording` - Pause/resume recording
+- `rewinding` - True only while a rewind is in progress
+- `frozen` - When true, no new frames and no emergency frames are created; rewind still works
+
 **Key Methods:**
 - `initialize(MinecraftServer)` - Called on server start
 - `shutdown()` - Called on server stop
-- `beginTick(long gameTime)` - Starts a new frame, commits any pending emergency frame
-- `endTick()` - Commits the current frame to the ring buffer
-- `ensureCurrentFrame()` - Creates an emergency frame for changes between ticks
+- `beginTick(long gameTime)` - Starts a new frame, commits any pending emergency frame (skipped when frozen)
+- `endTick()` - Commits the current frame to the ring buffer (skipped when frozen)
+- `ensureCurrentFrame()` - Creates an emergency frame for changes between ticks (skipped when frozen)
+- `freeze()` - Commits any pending frame, then sets frozen; no more recording until unfreeze
 - `getFramesForRewind(int tickCount)` - Returns frames in reverse chronological order
 
 **Ring Buffer Implementation:**
@@ -56,11 +62,15 @@ Static utility class providing hooks for mixins to record changes.
 - `entitiesAtTickStart` - Set of UUIDs present at tick start
 - `removedEntitiesThisTick` - Entities removed during current tick
 
-### 3. RewindExecutor (`core/RewindExecutor.java`)
+### 3. RewindPlan (`core/RewindPlan.java`)
 
-Executes the actual rewind operation.
+Immutable plan describing what a rewind would do (block target states, entity ops). Used for both execution and preview (dry-run). Contains `BlockKey`, `EntitySpawnInfo`, and maps/sets for blocks and entities.
 
-**Rewind Phases:**
+### 4. RewindExecutor (`core/RewindExecutor.java`)
+
+Builds and applies rewind plans. No longer performs world writes directly; it uses `buildPlan(frames)` and `applyPlan(server, plan)`.
+
+**Rewind Phases (inside applyPlan):**
 1. **Collect Entity Operations** - Identify entities to remove (spawned after target) and respawn (despawned after target)
 2. **Remove Entities** - Discard entities that were spawned after the target time
 3. **Restore Entity States** - Apply old position/velocity/health to existing entities
@@ -74,18 +84,28 @@ Executes the actual rewind operation.
 - Disables recording during rewind to prevent feedback loops
 - Returns detailed `RewindResult` with statistics
 
-### 4. TimelineCommand (`command/TimelineCommand.java`)
+### 5. TimelineCommand (`command/TimelineCommand.java`)
 
 Brigadier command registration for `/timeline`.
 
 **Commands:**
 - `/timeline rewind <seconds>` - Rewind 1-30 seconds
-- `/timeline status` - Show recording state and buffer info
+- `/timeline status` - Show recording state, frozen state, and buffer info
 - `/timeline clear` - Clear all recorded frames
-- `/timeline pause` - Pause recording
-- `/timeline resume` - Resume recording
+- `/timeline pause` / `resume` - Pause or resume recording
+- `/timeline freeze` - Freeze timeline (commit pending frame, then stop all recording; rewind still works)
+- `/timeline unfreeze` - Unfreeze
+- `/timeline preview <seconds>` - Build a rewind plan with caps, send to commanding player (players only)
+- `/timeline preview clear` - Send clear-preview packet to player
 
 **Permissions:** Requires OP level 2 (gamemaster)
+
+### 6. Preview (server → client)
+
+- **PreviewPayload** (`network/PreviewPayload.java`) - CustomPayload with block entries (dimension, pos, kind) and entity entries (dimension, x,y,z, kind, type). Caps: MAX_BLOCKS=2000, MAX_ENTITY_OPS=500, MAX_RADIUS_SQ=64².
+- **PreviewSender** (`network/PreviewSender.java`) - Builds plan, filters by player radius, builds payload, sends to player via `ServerPlayNetworking.send`. `sendClearToPlayer` sends empty payload.
+- **RewindClientMod** - Client entrypoint: registers payload type and `ClientPlayNetworking.registerGlobalReceiver`; stores payload in PreviewRenderer.
+- **PreviewRenderer** (`client/PreviewRenderer.java`) - Holds current payload; expires after 10s. `getCurrentPreview()` for use by a render hook (e.g. mixin or Fabric WorldRenderEvents when available).
 
 ## Data Structures
 

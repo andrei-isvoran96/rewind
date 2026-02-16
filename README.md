@@ -33,10 +33,14 @@ All commands require OP level 2 (gamemaster permissions).
 | Command | Description |
 |---------|-------------|
 | `/timeline rewind <seconds>` | Rewind the world by 1-30 seconds |
-| `/timeline status` | Show recording status and buffer info |
+| `/timeline status` | Show recording status, buffer info, and frozen state |
 | `/timeline clear` | Clear all recorded history |
 | `/timeline pause` | Pause recording |
 | `/timeline resume` | Resume recording |
+| `/timeline freeze` | Freeze timeline (no new frames, no emergency frames; rewind still works) |
+| `/timeline unfreeze` | Unfreeze timeline |
+| `/timeline preview <seconds>` | Send a rewind-preview diff to your client (1-30s; overlay expires in 10s) |
+| `/timeline preview clear` | Clear the preview overlay (players only) |
 
 ## Usage
 
@@ -116,7 +120,7 @@ src/main/java/io/github/rewind/
 - [ ] Configuration file
 - [ ] Full entity NBT support
 - [ ] Player inventory tracking (opt-in)
-- [ ] Rewind preview before confirming
+- [x] Rewind preview (server sends diff; client stores it; 3D overlay can be extended via mixin)
 - [ ] Per-dimension toggle
 - [ ] Undo rewind command
 

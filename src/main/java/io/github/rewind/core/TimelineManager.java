@@ -38,6 +38,7 @@ public class TimelineManager {
     // State
     private boolean recording = true;
     private boolean rewinding = false;
+    private boolean frozen = false;
     private long totalMemoryUsed = 0;
     
     // Server reference
@@ -85,7 +86,7 @@ public class TimelineManager {
      * Start recording a new tick frame.
      */
     public void beginTick(long gameTime) {
-        if (!recording || rewinding) {
+        if (!recording || rewinding || frozen) {
             return;
         }
         
@@ -125,7 +126,7 @@ public class TimelineManager {
      * Ensure a current frame exists for recording.
      */
     public void ensureCurrentFrame() {
-        if (!recording || rewinding) {
+        if (!recording || rewinding || frozen) {
             return;
         }
         if (currentFrame == null || currentFrame.isSealed()) {
@@ -139,7 +140,7 @@ public class TimelineManager {
      * Called at the END of each server tick.
      */
     public void endTick() {
-        if (!recording || rewinding || currentFrame == null) {
+        if (!recording || rewinding || frozen || currentFrame == null) {
             return;
         }
         
@@ -202,6 +203,17 @@ public class TimelineManager {
     /**
      * Clear all recorded frames.
      */
+    /**
+     * Freeze the timeline: stop recording (no new frames, no emergency frames).
+     * Commits any pending frame first. History is preserved; rewind still works.
+     */
+    public void freeze() {
+        if (currentFrame != null && !currentFrame.isSealed() && !currentFrame.isEmpty()) {
+            commitCurrentFrame();
+        }
+        this.frozen = true;
+    }
+
     public void clear() {
         for (int i = 0; i < maxFrames; i++) {
             frames[i] = null;
@@ -210,6 +222,7 @@ public class TimelineManager {
         frameCount = 0;
         totalMemoryUsed = 0;
         currentFrame = null;
+        frozen = false;
         LOGGER.info("Timeline buffer cleared");
     }
 
@@ -247,6 +260,14 @@ public class TimelineManager {
 
     public boolean isRewinding() {
         return rewinding;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
+    }
+
+    public boolean isFrozen() {
+        return frozen;
     }
 
     // Status info
@@ -287,10 +308,12 @@ public class TimelineManager {
         return String.format(
                 "Timeline Status:\n" +
                 "  Recording: %s\n" +
+                "  Frozen: %s\n" +
                 "  Frames: %d / %d (%.1f seconds)\n" +
                 "  Memory: %.2f MB / %.2f MB\n" +
                 "  Oldest tick: %s",
                 recording ? "Active" : "Paused",
+                frozen ? "Yes" : "No",
                 frameCount, maxFrames, frameCount / (float) TICKS_PER_SECOND,
                 totalMemoryUsed / (1024.0 * 1024.0), MAX_MEMORY_BYTES / (1024.0 * 1024.0),
                 getOldestTickTime() != null ? getOldestTickTime().toString() : "N/A"

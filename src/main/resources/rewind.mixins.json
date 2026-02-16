@@ -6,7 +6,7 @@
 		"BlockChangeMixin",
 		"BlockEntityMixin",
 		"PlayerBlockBreakMixin",
-		"ServerWorldMixin"
+		"ServerWorldMixin","WorldRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
